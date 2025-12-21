@@ -1,0 +1,16 @@
+{
+  "name": "MapTiler PWA Map",
+  "short_name": "MapTiler Map",
+  "description": "A simple interactive map built with MapTiler SDK JS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#007cbf",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxjaXJjbGUgY3g9Ijk2IiBjeT0iOTYiIHI9Ijk2IiBmaWxsPSIjMDA3Y2JmIi8+CjxwYXRoIGQ9Ik0xMDAgODRIMzZDMzQuNTYgODQgMzQgODQuNTYgMzQgODZWMTE0QzM0IDExNS40NCAzNC40NCAxMTYgMzYgMTE2SDE1NkMxNTcuNDQgMTE2IDE1OCAxMTUuNDQgMTU4IDExNFY4NkMxNTggODQuNTYgMTU3LjQ0IDg0IDE1NiA4NFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=",  // Simple map icon (base64 SVG)
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

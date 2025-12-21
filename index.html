@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MapTiler PWA Map</title>
+  <!-- MapTiler SDK CSS -->
+  <link href="https://unpkg.com/@maptiler/sdk/dist/maptiler-sdk.css" rel="stylesheet" />
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <!-- Theme color for PWA -->
+  <meta name="theme-color" content="#007cbf">
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- MapTiler SDK JS -->
+  <script src="https://unpkg.com/@maptiler/sdk/dist/maptiler-sdk.umd.js"></script>
+  <script>
+    // Set your MapTiler API key
+    maptilersdk.config.apiKey = 'kL6oIUVznNOluKtvC2BJ';
+
+    // Initialize the map
+    const map = new maptilersdk.Map({
+      container: 'map',  // HTML element ID
+      style: maptilersdk.MapStyle.STREETS,  // Use a built-in style (or custom URL)
+      center: [16.62662018, 49.2125578],  // [longitude, latitude] – e.g., Ostrava
+      zoom: 14  // Starting zoom
+    });
+
+    // Optional: Add a click event to show coordinates
+    map.on('click', (e) => {
+      console.log('Clicked at:', e.lngLat);
+      // You could add a popup here: new maptilersdk.Popup().setText('Lat/Lng: ' + e.lngLat).setLngLat(e.lngLat).addTo(map);
+    });
+  </script>
+
+  <!-- Register Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then((reg) => console.log('SW registered:', reg))
+        .catch((err) => console.log('SW registration failed:', err));
+    }
+  </script>
+</body>
+</html>
