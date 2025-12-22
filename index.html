@@ -18,9 +18,10 @@
 </head>
 <body>
   <div id="map"></div>
+    <script src="https://unpkg.com/@turf/turf@7/turf.min.js"></script>
+    <!-- MapTiler SDK JS -->
+    <script src="https://cdn.maptiler.com/maptiler-sdk-js/v3.9.0/maptiler-sdk.umd.min.js"></script>
 
-  <!-- MapTiler SDK JS -->
-  <script src="https://cdn.maptiler.com/maptiler-sdk-js/v3.9.0/maptiler-sdk.umd.min.js"></script>
   <script>
     // Set your MapTiler API key
     maptilersdk.config.apiKey = 'kL6oIUVznNOluKtvC2BJ';
@@ -75,6 +76,39 @@ function addBoundaries(geoJson) {
   });
 
   console.log('Boundaries added:', geoJson.features.length);
+
+  // Zoom to bounds after a brief delay to allow rendering
+    setTimeout(() => {
+      try {
+        // Use Turf.js for bbox (scalable, handles complex geoms)
+        const bbox = turf.bbox(geoJson); // [minLng, minLat, maxLng, maxLat]
+        const bounds = [
+          [bbox[0], bbox[1]], // Southwest
+          [bbox[2], bbox[3]], // Northeast
+        ];
+
+        map.fitBounds(bounds, {
+          padding: 50, // Padding around bounds
+          duration: 1000, // Smooth animation (ms)
+          maxZoom: 18, // Prevent over-zoom
+          offset: [0, -50], // Optional: Center slightly above
+        });
+
+        console.log('Zoomed to boundaries bounds:', bounds);
+      } catch (bboxError) {
+        console.warn('Failed to compute/zoom to bounds:', bboxError);
+        // Fallback: Zoom to first feature's center
+        const firstFeature = geoJson.features[0];
+        if (firstFeature && firstFeature.geometry) {
+          const center = turf.center(firstFeature).geometry.coordinates;
+          map.flyTo({
+            center: center,
+            zoom: 14,
+            duration: 1000,
+          });
+        }
+      }
+    }, 200); // Short delay for layer to render
 }
 
 // Example interactivity: Click to highlight boundary
