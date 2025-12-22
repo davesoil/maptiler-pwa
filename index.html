@@ -6,7 +6,7 @@
   <title>MapTiler PWA Map</title>
   <!-- MapTiler SDK CSS -->
   <link href='https://cdn.maptiler.com/maptiler-sdk-js/v3.9.0/maptiler-sdk.css' rel='stylesheet' />
-  
+
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
   <!-- Theme color for PWA -->
@@ -33,11 +33,16 @@
       zoom: 14  // Starting zoom
     });
 
+    // Expose globally for Flutter WebView access
+    window.maptilerMap = map;  // Use 'window.maptilerMap' to avoid conflicts
+
     // Optional: Add a click event to show coordinates
     map.on('click', (e) => {
       console.log('Clicked at:', e.lngLat);
       // You could add a popup here: new maptilersdk.Popup().setText('Lat/Lng: ' + e.lngLat).setLngLat(e.lngLat).addTo(map);
     });
+
+
   </script>
 
   <!-- Register Service Worker -->
