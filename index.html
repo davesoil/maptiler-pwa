@@ -29,18 +29,79 @@
     const map = new maptilersdk.Map({
       container: 'map',  // HTML element ID
       style: maptilersdk.MapStyle.STREETS,  // Use a built-in style (or custom URL)
-      center: [16.62662018, 49.2125578],  // [longitude, latitude] – e.g., Ostrava
-      zoom: 14  // Starting zoom
+      center: [173.617976, -40.437534],  // [longitude, latitude] – e.g., Ostrava
+      zoom: 5.5  // Starting zoom
     });
 
     // Expose globally for Flutter WebView access
     window.maptilerMap = map;  // Use 'window.maptilerMap' to avoid conflicts
 
-    // Optional: Add a click event to show coordinates
-    map.on('click', (e) => {
-      console.log('Clicked at:', e.lngLat);
-      // You could add a popup here: new maptilersdk.Popup().setText('Lat/Lng: ' + e.lngLat).setLngLat(e.lngLat).addTo(map);
+    // In <script> after map init (in index.html or map-script.js)
+let boundarySourceId = 'boundaries-source';
+let boundaryLayerId = 'boundaries-layer';
+
+// Function to add/remove boundaries (called from Flutter)
+function addBoundaries(geoJson) {
+  if (!map) {
+    console.error('Map not ready');
+    return;
+  }
+
+  // Remove existing layer if present (for updates)
+  if (map.getLayer(boundaryLayerId)) {
+    map.removeLayer(boundaryLayerId);
+  }
+  if (map.getSource(boundarySourceId)) {
+    map.removeSource(boundarySourceId);
+  }
+
+  // Add GeoJSON source and layer
+  map.addSource(boundarySourceId, {
+    type: 'geojson',
+    data: geoJson, // Passed from Flutter as JSON string (parsed auto)
+  });
+
+  map.addLayer({
+    id: boundaryLayerId,
+    type: 'fill', // For polygons; use 'line' for boundaries
+    source: boundarySourceId,
+    paint: {
+      'fill-color': '#088', // Blue fill
+      'fill-opacity': 0.4,
+      'fill-outline-color': '#000', // Black outline
+    },
+    // Optional: Filter by zoom or properties
+    filter: ['==', '$type', 'Polygon'], // Only polygons
+  });
+
+  console.log('Boundaries added:', geoJson.features.length);
+}
+
+// Example interactivity: Click to highlight boundary
+map.on('click', boundaryLayerId, (e) => {
+  const features = map.queryRenderedFeatures(e.point, { layers: [boundaryLayerId] });
+  if (features.length > 0) {
+    const feature = features[0];
+    // Highlight (toggle opacity or color)
+    map.setPaintProperty(boundaryLayerId, 'fill-opacity', 0.8);
+    // Send feature props back to Flutter (e.g., boundary ID)
+    window.flutter_inappwebview.callHandler('BoundaryClickHandler', {
+      id: feature.properties.id, // Assume your GeoJSON has 'id' prop
+      coords: e.lngLat,
     });
+  }
+});
+
+// Hover effect for scalability (debounced)
+map.on('mouseenter', boundaryLayerId, () => {
+  map.getCanvas().style.cursor = 'pointer';
+});
+map.on('mouseleave', boundaryLayerId, () => {
+  map.getCanvas().style.cursor = '';
+});
+
+// Expose for Flutter (if needed)
+window.addBoundaries = addBoundaries;
 
 
   </script>
