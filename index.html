@@ -44,7 +44,7 @@
       if (features.length > 0) {
         const feature = features[0];
         // Highlight (toggle opacity or color)
-        map.setPaintProperty(boundaryLayerId, 'fill-opacity', 0.8);
+        map.setPaintProperty("boundary-layer", 'fill-opacity', 0.8);
         // Send feature props back to Flutter (e.g., boundary ID)
         window.flutter_inappwebview.callHandler('BoundaryClickHandler', {
           id: feature.properties.Boundary_ID, // Assume your GeoJSON has 'id' prop
@@ -67,16 +67,13 @@
     // });
 
 
-    map.on('mouseenter', boundaryLayerId, () => {
+    map.on('mouseenter', "boundary-layer", () => {
       map.getCanvas().style.cursor = 'pointer';
     });
 
-    map.on('mouseleave', boundaryLayerId, () => {
+    map.on('mouseleave', "boundary-layer", () => {
       map.getCanvas().style.cursor = '';
     });
-
-    let boundarySourceId = 'boundaries-source';
-    let boundaryLayerId = 'boundaries-layer';
 
 function addBoundaries(geoJson) {
   if (!map) {
@@ -91,24 +88,24 @@ function addBoundaries(geoJson) {
 
   try {
     // Remove existing layer/source for clean updates
-    if (map.getLayer(boundaryLayerId)) {
-      map.removeLayer(boundaryLayerId);
+    if (map.getLayer("boundary-layer")) {
+      map.removeLayer("boundary-layer");
     }
-    if (map.getSource(boundarySourceId)) {
-      map.removeSource(boundarySourceId);
+    if (map.getSource("boundary-source")) {
+      map.removeSource("boundary-source");
     }
 
     // Add GeoJSON source
-    map.addSource(boundarySourceId, {
+    map.addSource("boundary-source", {
       type: 'geojson',
       data: geoJson,
     });
 
     // Add layer (fill for polygons; adjust for lines if needed)
     map.addLayer({
-      id: boundaryLayerId,
+      id: "boundary-layer",
       type: 'fill',
-      source: boundarySourceId,
+      source: "boundary-source",
       paint: {
         'fill-color': '#088', // Blue fill
         'fill-opacity': 0.4,
