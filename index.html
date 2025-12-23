@@ -19,10 +19,8 @@
 <body>
   <div id="map"></div>
     <script src="https://unpkg.com/@turf/turf@7/turf.min.js"></script>
-    <!-- MapTiler SDK JS -->
     <script src="https://cdn.maptiler.com/maptiler-sdk-js/v3.9.0/maptiler-sdk.umd.min.js"></script>
-
-  <script>
+    <script>
     // Set your MapTiler API key
     maptilersdk.config.apiKey = 'kL6oIUVznNOluKtvC2BJ';
 
@@ -37,13 +35,48 @@
     // Expose globally for Flutter WebView access
     window.maptilerMap = map;  // Use 'window.maptilerMap' to avoid conflicts
 
+    map.on("load", function () {
+      map.on("click", "boundary-layer", BoundaryFeatureClick);
+    });
 
-// Function to add/remove boundaries (called from Flutter)
-// Improved addBoundaries function with 'idle' event listener for reliable zooming
-// Assumes: Turf.js included via CDN for bbox/center calculations
+    function BoundaryFeatureClick(e){
+      const features = map.queryRenderedFeatures(e.point, { layers: ["boundary-layer"] });
+      if (features.length > 0) {
+        const feature = features[0];
+        // Highlight (toggle opacity or color)
+        map.setPaintProperty(boundaryLayerId, 'fill-opacity', 0.8);
+        // Send feature props back to Flutter (e.g., boundary ID)
+        window.flutter_inappwebview.callHandler('BoundaryClickHandler', {
+          id: feature.properties.Boundary_ID, // Assume your GeoJSON has 'id' prop
+          coords: e.lngLat,
+        });
+      }
+    }
+    // map.on('click', boundaryLayerId, (e) => {
+    //   const features = map.queryRenderedFeatures(e.point, { layers: [boundaryLayerId] });
+    //   if (features.length > 0) {
+    //     const feature = features[0];
+    //     // Highlight (toggle opacity or color)
+    //     map.setPaintProperty(boundaryLayerId, 'fill-opacity', 0.8);
+    //     // Send feature props back to Flutter (e.g., boundary ID)
+    //     window.flutter_inappwebview.callHandler('BoundaryClickHandler', {
+    //       id: feature.properties.Boundary_ID, // Assume your GeoJSON has 'id' prop
+    //       coords: e.lngLat,
+    //     });
+    //   }
+    // });
 
-let boundarySourceId = 'boundaries-source';
-let boundaryLayerId = 'boundaries-layer';
+
+    map.on('mouseenter', boundaryLayerId, () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+
+    map.on('mouseleave', boundaryLayerId, () => {
+      map.getCanvas().style.cursor = '';
+    });
+
+    let boundarySourceId = 'boundaries-source';
+    let boundaryLayerId = 'boundaries-layer';
 
 function addBoundaries(geoJson) {
   if (!map) {
@@ -124,27 +157,8 @@ function addBoundaries(geoJson) {
 
 
 // Example interactivity: Click to highlight boundary
-map.on('click', boundaryLayerId, (e) => {
-  const features = map.queryRenderedFeatures(e.point, { layers: [boundaryLayerId] });
-  if (features.length > 0) {
-    const feature = features[0];
-    // Highlight (toggle opacity or color)
-    map.setPaintProperty(boundaryLayerId, 'fill-opacity', 0.8);
-    // Send feature props back to Flutter (e.g., boundary ID)
-    window.flutter_inappwebview.callHandler('BoundaryClickHandler', {
-      id: feature.properties.Boundary_ID, // Assume your GeoJSON has 'id' prop
-      coords: e.lngLat,
-    });
-  }
-});
 
-// Hover effect for scalability (debounced)
-map.on('mouseenter', boundaryLayerId, () => {
-  map.getCanvas().style.cursor = 'pointer';
-});
-map.on('mouseleave', boundaryLayerId, () => {
-  map.getCanvas().style.cursor = '';
-});
+
 
 // Expose for Flutter (if needed)
 window.addBoundaries = addBoundaries;
