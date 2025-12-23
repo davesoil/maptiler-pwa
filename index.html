@@ -132,7 +132,7 @@ map.on('click', boundaryLayerId, (e) => {
     map.setPaintProperty(boundaryLayerId, 'fill-opacity', 0.8);
     // Send feature props back to Flutter (e.g., boundary ID)
     window.flutter_inappwebview.callHandler('BoundaryClickHandler', {
-      id: feature.properties.id, // Assume your GeoJSON has 'id' prop
+      id: feature.properties.Boundary_ID, // Assume your GeoJSON has 'id' prop
       coords: e.lngLat,
     });
   }
