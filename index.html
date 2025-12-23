@@ -1,151 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MapTiler PWA Map</title>
-<!-- MapTiler SDK CSS -->
-<link href='https://cdn.maptiler.com/maptiler-sdk-js/v3.9.0/maptiler-sdk.css' rel='stylesheet' />
-<!-- PWA Manifest -->
-<link rel="manifest" href="manifest.json">
-<!-- Theme color for PWA -->
-<meta name="theme-color" content="#007cbf">
-<style>
-body { margin: 0; padding: 0; }
-#map { position: absolute; top: 0; bottom: 0; width: 100%; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MapTiler PWA Map</title>
+  <!-- MapTiler SDK CSS -->
+  <link href='https://cdn.maptiler.com/maptiler-sdk-js/v3.9.0/maptiler-sdk.css' rel='stylesheet' />
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <!-- Theme color for PWA -->
+  <meta name="theme-color" content="#007cbf">
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+  </style>
 </head>
 <body>
-<div id="map"></div>
-<script src="https://unpkg.com/@turf/turf@7/turf.min.js"></script>
-<!-- MapTiler SDK JS -->
-<script src="https://cdn.maptiler.com/maptiler-sdk-js/v3.9.0/maptiler-sdk.umd.min.js"></script>
-<script>
-// Set your MapTiler API key
-maptilersdk.config.apiKey = 'kL6oIUVznNOluKtvC2BJ';
-// Initialize the map
-const map = new maptilersdk.Map({
-container: 'map', // HTML element ID
-style: maptilersdk.MapStyle.HYBRID, // Use a built-in style (or custom URL)
-center: [173.617976, -40.437534], // [longitude, latitude] – e.g., Ostrava
-zoom: 5.5 // Starting zoom
+  <div id="map"></div>
+    <script src="https://unpkg.com/@turf/turf@7/turf.min.js"></script>
+    <!-- MapTiler SDK JS -->
+    <script src="https://cdn.maptiler.com/maptiler-sdk-js/v3.9.0/maptiler-sdk.umd.min.js"></script>
+
+  <script>
+    // Set your MapTiler API key
+    maptilersdk.config.apiKey = 'kL6oIUVznNOluKtvC2BJ';
+
+    // Initialize the map
+    const map = new maptilersdk.Map({
+      container: 'map',  // HTML element ID
+      style: maptilersdk.MapStyle.HYBRID,  // Use a built-in style (or custom URL)
+      center: [173.617976, -40.437534],  // [longitude, latitude] – e.g., Ostrava
+      zoom: 5.5  // Starting zoom
     });
-// Expose globally for Flutter WebView access
-window.maptilerMap = map; // Use 'window.maptilerMap' to avoid conflicts
+
+    // Expose globally for Flutter WebView access
+    window.maptilerMap = map;  // Use 'window.maptilerMap' to avoid conflicts
+
+
 // Function to add/remove boundaries (called from Flutter)
 // Improved addBoundaries function with 'idle' event listener for reliable zooming
 // Assumes: Turf.js included via CDN for bbox/center calculations
+
 let boundarySourceId = 'boundaries-source';
 let boundaryLayerId = 'boundaries-layer';
+
 function addBoundaries(geoJson) {
-if (!map) {
-console.error('Map not ready');
-return;
+  if (!map) {
+    console.error('Map not ready');
+    return;
   }
-if (!geoJson || !geoJson.features || geoJson.features.length === 0) {
-console.warn('No valid features in GeoJSON');
-return;
+
+  if (!geoJson || !geoJson.features || geoJson.features.length === 0) {
+    console.warn('No valid features in GeoJSON');
+    return;
   }
-try {
-// Remove existing layer/source for clean updates
-if (map.getLayer(boundaryLayerId)) {
-map.removeLayer(boundaryLayerId);
+
+  try {
+    // Remove existing layer/source for clean updates
+    if (map.getLayer(boundaryLayerId)) {
+      map.removeLayer(boundaryLayerId);
     }
-if (map.getSource(boundarySourceId)) {
-map.removeSource(boundarySourceId);
+    if (map.getSource(boundarySourceId)) {
+      map.removeSource(boundarySourceId);
     }
-// Add GeoJSON source
-map.addSource(boundarySourceId, {
-type: 'geojson',
-data: geoJson,
+
+    // Add GeoJSON source
+    map.addSource(boundarySourceId, {
+      type: 'geojson',
+      data: geoJson,
     });
-// Add layer (fill for polygons; adjust for lines if needed)
-map.addLayer({
-id: boundaryLayerId,
-type: 'fill',
-source: boundarySourceId,
-paint: {
-'fill-color': '#088', // Blue fill
-'fill-opacity': 0.4,
-'fill-outline-color': '#000', // Black outline
+
+    // Add layer (fill for polygons; adjust for lines if needed)
+    map.addLayer({
+      id: boundaryLayerId,
+      type: 'fill',
+      source: boundarySourceId,
+      paint: {
+        'fill-color': '#088', // Blue fill
+        'fill-opacity': 0.4,
+        'fill-outline-color': '#000', // Black outline
       },
-filter: ['==', '$type', 'Polygon'], // Only polygons; remove for all types
+      filter: ['==', '$type', 'Polygon'], // Only polygons; remove for all types
     });
-console.log(`Boundaries added: ${geoJson.features.length} features`);
-// Wait for map to be idle (finished rendering) before zooming
-// Use one-time listener to avoid multiple firings
-const onIdleOnce = () => {
-map.off('idle', onIdleOnce); // Remove listener after firing
-try {
-// Use Turf.js for bbox (scalable, handles complex geoms)
-const bbox = turf.bbox(geoJson); // [minLng, minLat, maxLng, maxLat]
-const bounds = [
-[bbox[0], bbox[1]], // Southwest
-[bbox[2], bbox[3]], // Northeast
-];
-map.fitBounds(bounds, {
-padding: 50, // Padding around bounds
-duration: 1000, // Smooth animation (ms)
-maxZoom: 18, // Prevent over-zoom
-offset: [0, -50], // Optional: Center slightly above
-});
-console.log('Zoomed to boundaries bounds:', bounds);
-} catch (bboxError) {
-console.warn('Failed to compute/zoom to bounds:', bboxError);
-// Fallback: Zoom to first feature's center
-const firstFeature = geoJson.features[0];
-if (firstFeature && firstFeature.geometry) {
-const center = turf.center(firstFeature).geometry.coordinates;
-map.flyTo({
-center: center,
-zoom: 14,
-duration: 1000,
+
+    console.log(`Boundaries added: ${geoJson.features.length} features`);
+
+    // Zoom to bounds immediately after adding layer
+    try {
+      // Use Turf.js for bbox (scalable, handles complex geoms)
+      const bbox = turf.bbox(geoJson); // [minLng, minLat, maxLng, maxLat]
+      const bounds = [
+        [bbox[0], bbox[1]], // Southwest
+        [bbox[2], bbox[3]], // Northeast
+      ];
+
+      map.fitBounds(bounds, {
+        padding: 50, // Padding around bounds
+        duration: 1000, // Smooth animation (ms)
+        maxZoom: 18, // Prevent over-zoom
+        offset: [0, -50], // Optional: Center slightly above
+      });
+
+      console.log('Zoomed to boundaries bounds:', bounds);
+    } catch (bboxError) {
+      console.warn('Failed to compute/zoom to bounds:', bboxError);
+      // Fallback: Zoom to first feature's center
+      const firstFeature = geoJson.features[0];
+      if (firstFeature && firstFeature.geometry) {
+        const center = turf.center(firstFeature).geometry.coordinates;
+        map.flyTo({
+          center: center,
+          zoom: 14,
+          duration: 1000,
         });
       }
     }
-};
-if (!map.isMoving() && !map.isLoading()) {
-// If already idle, zoom immediately
-onIdleOnce();
-} else {
-// Otherwise, listen for idle
-map.once('idle', onIdleOnce);
-}
+
   } catch (error) {
-console.error('Error adding boundaries:', error);
+    console.error('Error adding boundaries:', error);
   }
 }
+
 // Example interactivity: Click to highlight boundary
 map.on('click', boundaryLayerId, (e) => {
-const features = map.queryRenderedFeatures(e.point, { layers: [boundaryLayerId] });
-if (features.length > 0) {
-const feature = features[0];
-// Highlight (toggle opacity or color)
-map.setPaintProperty(boundaryLayerId, 'fill-opacity', 0.8);
-// Send feature props back to Flutter (e.g., boundary ID)
-window.flutter_inappwebview.callHandler('BoundaryClickHandler', {
-id: feature.properties.id, // Assume your GeoJSON has 'id' prop
-coords: e.lngLat,
+  const features = map.queryRenderedFeatures(e.point, { layers: [boundaryLayerId] });
+  if (features.length > 0) {
+    const feature = features[0];
+    // Highlight (toggle opacity or color)
+    map.setPaintProperty(boundaryLayerId, 'fill-opacity', 0.8);
+    // Send feature props back to Flutter (e.g., boundary ID)
+    window.flutter_inappwebview.callHandler('BoundaryClickHandler', {
+      id: feature.properties.id, // Assume your GeoJSON has 'id' prop
+      coords: e.lngLat,
     });
   }
 });
+
 // Hover effect for scalability (debounced)
 map.on('mouseenter', boundaryLayerId, () => {
-map.getCanvas().style.cursor = 'pointer';
+  map.getCanvas().style.cursor = 'pointer';
 });
 map.on('mouseleave', boundaryLayerId, () => {
-map.getCanvas().style.cursor = '';
+  map.getCanvas().style.cursor = '';
 });
+
 // Expose for Flutter (if needed)
 window.addBoundaries = addBoundaries;
-</script>
-<!-- Register Service Worker -->
-<script>
-if ('serviceWorker' in navigator) {
-navigator.serviceWorker.register('/sw.js')
+
+
+  </script>
+
+  <!-- Register Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
         .then((reg) => console.log('SW registered:', reg))
         .catch((err) => console.log('SW registration failed:', err));
     }
-</script>
+  </script>
 </body>
 </html>
