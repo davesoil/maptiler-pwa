@@ -152,6 +152,83 @@ function addBoundaries(geoJson) {
   }
 }
 
+function loadLayerBoundary(geoJson) {
+  if (!map) {
+    console.error('Map not ready');
+    return;
+  }
+
+  if (!geoJson || !geoJson.features || geoJson.features.length === 0) {
+    console.warn('No valid features in GeoJSON');
+    return;
+  }
+
+  try {
+    // Remove existing layer/source for clean updates
+    if (map.getLayer("boundary-layer")) {
+      map.removeLayer("boundary-layer");
+    }
+    if (map.getSource("boundary-source")) {
+      map.removeSource("boundary-source");
+    }
+
+    // Add GeoJSON source
+    map.addSource("boundary-source", {
+      type: 'geojson',
+      data: geoJson,
+    });
+
+    // Add layer (fill for polygons; adjust for lines if needed)
+    map.addLayer({
+      id: "boundary-layer",
+      type: 'fill',
+      source: "boundary-source",
+      paint: {
+        'fill-color': '#088', // Blue fill
+        'fill-opacity': 0.4,
+        'fill-outline-color': '#000', // Black outline
+      },
+      filter: ['==', '$type', 'Polygon'], // Only polygons; remove for all types
+    });
+
+    console.log(`Boundaries added: ${geoJson.features.length} features`);
+
+    // Zoom to bounds immediately after adding layer
+    try {
+      // Use Turf.js for bbox (scalable, handles complex geoms)
+      const bbox = turf.bbox(geoJson); // [minLng, minLat, maxLng, maxLat]
+      const bounds = [
+        [bbox[0], bbox[1]], // Southwest
+        [bbox[2], bbox[3]], // Northeast
+      ];
+
+      map.fitBounds(bounds, {
+        padding: 50, // Padding around bounds
+        duration: 1000, // Smooth animation (ms)
+        maxZoom: 18, // Prevent over-zoom
+        offset: [0, -50], // Optional: Center slightly above
+      });
+
+      console.log('Zoomed to boundaries bounds:', bounds);
+    } catch (bboxError) {
+      console.warn('Failed to compute/zoom to bounds:', bboxError);
+      // Fallback: Zoom to first feature's center
+      const firstFeature = geoJson.features[0];
+      if (firstFeature && firstFeature.geometry) {
+        const center = turf.center(firstFeature).geometry.coordinates;
+        map.flyTo({
+          center: center,
+          zoom: 14,
+          duration: 1000,
+        });
+      }
+    }
+
+  } catch (error) {
+    console.error('Error adding boundaries:', error);
+  }
+}
+
 
 // Example interactivity: Click to highlight boundary
 
